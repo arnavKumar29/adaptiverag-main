@@ -1,4 +1,4 @@
-# Adaptive RAG Engine 🔍
+# Adaptive RAG Engine 
 
 > Production-grade document intelligence with adaptive retrieval, self-evaluation, and full observability.
 
