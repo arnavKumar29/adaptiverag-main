@@ -1,0 +1,702 @@
+[
+  {
+    "question": "What is retrieval-augmented generation and how does it improve LLM outputs?",
+    "answer": "Retrieval-Augmented Generation (RAG) is a technique that enhances LLM outputs by first retrieving relevant documents from a knowledge base, then using those documents as context for the language model to generate more accurate, grounded, and up-to-date responses. It reduces hallucination by anchoring answers in actual source material.",
+    "query_class": "conceptual",
+    "expected_strategy": "dense",
+    "source_document": "rag_overview.pdf"
+  },
+  {
+    "question": "Explain the difference between dense and sparse retrieval methods.",
+    "answer": "Dense retrieval uses neural embeddings to represent queries and documents as high-dimensional vectors, enabling semantic matching. Sparse retrieval (e.g., BM25) uses term frequency and inverse document frequency for exact keyword matching. Dense excels at understanding meaning and paraphrases, while sparse is better for exact term lookups and rare keywords.",
+    "query_class": "conceptual",
+    "expected_strategy": "dense",
+    "source_document": "retrieval_methods.pdf"
+  },
+  {
+    "question": "How does reciprocal rank fusion combine results from multiple retrievers?",
+    "answer": "Reciprocal Rank Fusion (RRF) combines ranked lists by assigning each document a score of 1/(k+rank) where k is a constant (typically 60), then summing scores across all lists. Documents appearing in multiple lists receive higher combined scores, naturally boosting items that multiple retrievers agree are relevant.",
+    "query_class": "conceptual",
+    "expected_strategy": "dense",
+    "source_document": "fusion_algorithms.pdf"
+  },
+  {
+    "question": "What is the parent-child chunking strategy and why is it recommended?",
+    "answer": "Parent-child chunking creates large parent chunks (e.g., 1024 tokens) and smaller child chunks (e.g., 256 tokens) nested within them. Child chunks are indexed for precise vector retrieval, while parent chunks are returned to the LLM for richer context. This balances retrieval precision with generation context quality.",
+    "query_class": "conceptual",
+    "expected_strategy": "dense",
+    "source_document": "chunking_strategies.pdf"
+  },
+  {
+    "question": "Why is semantic caching important in a RAG pipeline?",
+    "answer": "Semantic caching stores responses for semantically similar queries, avoiding redundant retrieval and LLM generation for near-duplicate questions. It reduces latency (cache hits return in <50ms vs 2-5s for full pipeline), lowers compute costs, and improves user experience. Cache stampede prevention ensures only one request computes for concurrent identical queries.",
+    "query_class": "conceptual",
+    "expected_strategy": "dense",
+    "source_document": "caching_design.pdf"
+  },
+  {
+    "question": "BGE-M3 model maximum sequence length",
+    "answer": "The BGE-M3 embedding model supports a maximum sequence length of 8192 tokens, making it suitable for encoding longer passages and documents compared to models limited to 512 tokens.",
+    "query_class": "keyword",
+    "expected_strategy": "sparse",
+    "source_document": "bge_m3_docs.pdf"
+  },
+  {
+    "question": "\"BAAI/bge-reranker-v2-m3\" configuration parameters",
+    "answer": "The BGE reranker v2 M3 model is configured with the model name BAAI/bge-reranker-v2-m3, runs as a FastAPI microservice on port 8002, accepts POST /rerank requests with query and passages, and returns relevance scores between 0 and 1 for each passage.",
+    "query_class": "keyword",
+    "expected_strategy": "sparse",
+    "source_document": "reranker_config.pdf"
+  },
+  {
+    "question": "What OpenSearch analyzer is used for BM25 indexing?",
+    "answer": "The system uses an English language analyzer for BM25 indexing in OpenSearch, configured with standard tokenizer, lowercase filter, English stop words filter, and English stemmer for optimal text matching.",
+    "query_class": "keyword",
+    "expected_strategy": "sparse",
+    "source_document": "opensearch_setup.pdf"
+  },
+  {
+    "question": "How does Thompson Sampling work in the query router?",
+    "answer": "Thompson Sampling is used in Router v4 as a multi-armed bandit approach. Each strategy (dense/sparse/hybrid) per query class maintains Beta(alpha, beta) parameters. For each query, a random sample is drawn from each strategy's Beta distribution, and the strategy with the highest sample is selected. Alpha increases on success (high faithfulness), beta on failure, naturally balancing exploration and exploitation.",
+    "query_class": "conceptual",
+    "expected_strategy": "dense",
+    "source_document": "router_design.pdf"
+  },
+  {
+    "question": "What is the RAGAS faithfulness target threshold?",
+    "answer": "The RAGAS faithfulness target threshold is set to 0.80 (80%). Queries scoring below this threshold trigger a warning log, and the nightly feedback loop uses this threshold to update router strategy weights.",
+    "query_class": "keyword",
+    "expected_strategy": "sparse",
+    "source_document": "eval_config.pdf"
+  },
+  {
+    "question": "Explain the four-level LLM fallback chain.",
+    "answer": "The fallback chain provides graceful degradation: 1) Primary model (qwen2.5:7b via Ollama), 2) Fallback model (llama3.1:8b), 3) Cached similar answer from semantic cache, 4) Error response with trace information. Each level is tried sequentially, with retries and exponential backoff on the first two levels.",
+    "query_class": "conceptual",
+    "expected_strategy": "dense",
+    "source_document": "generation_design.pdf"
+  },
+  {
+    "question": "docker-compose service port mappings",
+    "answer": "The docker-compose configuration maps the following ports: nginx 80/443 (reverse proxy), Jaeger UI 16686 (tracing), Grafana 3000 (dashboards). Internal services communicate over the rag-internal Docker network without exposed ports.",
+    "query_class": "keyword",
+    "expected_strategy": "sparse",
+    "source_document": "deployment_guide.pdf"
+  },
+  {
+    "question": "How does the context compressor reduce token usage while maintaining answer quality?",
+    "answer": "The context compressor uses sentence-level relevance filtering to remove sentences that are not relevant to the query, achieving approximately 40% token reduction. It scores each sentence against the query using a lightweight similarity measure and retains only sentences above a relevance threshold, preserving the most informative content for the LLM.",
+    "query_class": "conceptual",
+    "expected_strategy": "dense",
+    "source_document": "compressor_design.pdf"
+  },
+  {
+    "question": "What Prometheus metrics are tracked for the RAG pipeline?",
+    "answer": "Eight Prometheus metrics are tracked: rag_query_total (counter by strategy/cache_hit), rag_query_latency_seconds (histogram by strategy), rag_cache_hit_total (counter by result), rag_ragas_faithfulness (gauge of rolling mean), rag_retrieval_latency_seconds (histogram by retriever), rag_reranker_latency_seconds (histogram), rag_llm_tokens_total (counter by model/token_type), and rag_ingestion_total (counter by source_type/status).",
+    "query_class": "mixed",
+    "expected_strategy": "hybrid",
+    "source_document": "observability_guide.pdf"
+  },
+  {
+    "question": "How does the JWT authentication system work in the API?",
+    "answer": "The API uses JWT (JSON Web Token) authentication with HS256 signing. Tokens are issued via POST /api/token with username/password credentials. Each request to protected endpoints must include an Authorization: Bearer <token> header. Tokens expire after 24 hours by default. API key authentication is also supported as an alternative, using SHA256-hashed keys stored in the api_keys table.",
+    "query_class": "conceptual",
+    "expected_strategy": "dense",
+    "source_document": "auth_design.pdf"
+  },
+  {
+    "question": "rate_limit_per_minute default value",
+    "answer": "The default rate limit is 100 requests per minute per client, enforced via Redis-backed rate limiting in the authentication middleware.",
+    "query_class": "keyword",
+    "expected_strategy": "sparse",
+    "source_document": "api_config.pdf"
+  },
+  {
+    "question": "Compare the four query router versions and their use cases.",
+    "answer": "Router v1 (rule-based) uses keyword heuristics for instant routing without dependencies. Router v2 (ML classifier) uses LogisticRegression trained on query logs for better accuracy after 500+ samples. Router v3 (LLM-based) uses structured JSON output from Ollama for nuanced classification. Router v4 (Thompson Sampling) uses a multi-armed bandit that self-optimizes by learning from RAGAS faithfulness scores.",
+    "query_class": "conceptual",
+    "expected_strategy": "dense",
+    "source_document": "router_design.pdf"
+  },
+  {
+    "question": "PostgreSQL table schema for query_logs",
+    "answer": "The query_logs table contains: id (UUID primary key), query (text), query_class (varchar 50), strategy_used (varchar 20), answer (text), model_used (varchar 100), latency_ms (integer), cache_hit (boolean), trace_id (varchar 64), document_id (UUID foreign key to documents), and created_at (timestamp with timezone).",
+    "query_class": "keyword",
+    "expected_strategy": "sparse",
+    "source_document": "database_schema.pdf"
+  },
+  {
+    "question": "How does the system handle document ingestion failures?",
+    "answer": "Document ingestion failures are handled through status tracking in the documents table. Each document progresses through pending → processing → indexed states, with a 'failed' state for errors. The error_message column stores failure details. Failed documents can be retried. The rag_ingestion_total Prometheus counter tracks success/failure rates by source type.",
+    "query_class": "mixed",
+    "expected_strategy": "hybrid",
+    "source_document": "ingestion_pipeline.pdf"
+  },
+  {
+    "question": "Weaviate DocumentChunk class properties",
+    "answer": "The DocumentChunk class in Weaviate stores: chunk_id (string), document_id (string), content (text), parent_id (string, nullable), source (string), collection (string), tags (string array), and created_at (date). Vectors are provided externally via the BGE-M3 embedder rather than using Weaviate's built-in vectorizers.",
+    "query_class": "keyword",
+    "expected_strategy": "sparse",
+    "source_document": "weaviate_schema.pdf"
+  },
+  {
+    "question": "What is the purpose of the embedding cache in Redis?",
+    "answer": "The Redis embedding cache stores computed BGE-M3 embeddings keyed by SHA256(text + model_version) with a 7-day TTL. This avoids redundant GPU inference for previously seen text passages, significantly reducing embedding computation time during re-ingestion or when the same content appears in multiple documents.",
+    "query_class": "conceptual",
+    "expected_strategy": "dense",
+    "source_document": "embedder_design.pdf"
+  },
+  {
+    "question": "How are OpenTelemetry traces structured in the query pipeline?",
+    "answer": "The query pipeline creates a root span 'rag.query' with child spans for each stage: rag.cache_lookup, rag.router, rag.{strategy}_retrieve, rag.rerank, rag.compress, and rag.generate. Each span records relevant attributes like strategy, result counts, latency, and model information. Traces are exported via OTLP gRPC to Jaeger.",
+    "query_class": "conceptual",
+    "expected_strategy": "dense",
+    "source_document": "telemetry_design.pdf"
+  },
+  {
+    "question": "semantic_cache_threshold configuration",
+    "answer": "The semantic_cache_threshold is set to 0.95 (95% cosine similarity) by default. This high threshold ensures only very semantically similar queries return cached results, preventing incorrect cache hits for related but distinct questions.",
+    "query_class": "keyword",
+    "expected_strategy": "sparse",
+    "source_document": "cache_config.pdf"
+  },
+  {
+    "question": "Explain the hybrid retrieval approach used in this system.",
+    "answer": "The hybrid retrieval approach runs dense (Weaviate vector search) and sparse (OpenSearch BM25) retrieval in parallel, then combines results using Reciprocal Rank Fusion (RRF) with k=60. This captures both semantic meaning and exact keyword matches. The fused results are then reranked using a BGE cross-encoder for final ordering.",
+    "query_class": "conceptual",
+    "expected_strategy": "dense",
+    "source_document": "retrieval_design.pdf"
+  },
+  {
+    "question": "What document formats are supported for ingestion?",
+    "answer": "The ingestion pipeline supports five document formats: PDF (via pdfplumber), DOCX (via python-docx), plain text (TXT), Markdown (MD), and web URLs (via httpx + html2text). Each format has a dedicated parser with text cleaning that normalizes whitespace, removes headers/footers, and handles encoding issues.",
+    "query_class": "mixed",
+    "expected_strategy": "hybrid",
+    "source_document": "parser_design.pdf"
+  },
+  {
+    "question": "How does the nightly feedback loop update router weights?",
+    "answer": "The nightly feedback loop queries the last 24 hours of query_logs joined with ragas_scores, computes the mean faithfulness per query_class/strategy combination, and upserts the router_weights table. It also updates Thompson Sampling alpha/beta parameters based on success rates. The Redis router weight cache is invalidated to ensure fresh weights are loaded.",
+    "query_class": "conceptual",
+    "expected_strategy": "dense",
+    "source_document": "feedback_design.pdf"
+  },
+  {
+    "question": "BATCH_SIZE environment variable for embedder",
+    "answer": "The BATCH_SIZE environment variable controls the number of texts processed in a single batch during embedding inference. The default value is 32. Larger batches improve throughput on GPUs but require more memory.",
+    "query_class": "keyword",
+    "expected_strategy": "sparse",
+    "source_document": "embedder_config.pdf"
+  },
+  {
+    "question": "What is cache stampede prevention and how is it implemented?",
+    "answer": "Cache stampede occurs when multiple concurrent requests for the same uncached query all trigger expensive computation simultaneously. It is prevented using a Redis mutex (SET NX with 10-second TTL). The first request acquires the lock and computes the result; subsequent requests wait up to 8 seconds for the cache to be populated, then retrieve the cached result.",
+    "query_class": "conceptual",
+    "expected_strategy": "dense",
+    "source_document": "cache_design.pdf"
+  },
+  {
+    "question": "ollama_fallback_model default setting",
+    "answer": "The default fallback model for Ollama is llama3.1:8b. It is used when the primary model (qwen2.5:7b) fails after 3 retry attempts with exponential backoff.",
+    "query_class": "keyword",
+    "expected_strategy": "sparse",
+    "source_document": "llm_config.pdf"
+  },
+  {
+    "question": "How does the cross-encoder reranker improve retrieval quality?",
+    "answer": "The cross-encoder reranker (BGE-reranker-v2-m3) takes the query and each retrieved chunk as a pair, computing a relevance score using full cross-attention. Unlike bi-encoder retrieval, it can model fine-grained query-document interactions. It reranks the over-retrieved results (4x top_k) down to the final top_k, significantly improving precision.",
+    "query_class": "conceptual",
+    "expected_strategy": "dense",
+    "source_document": "reranker_design.pdf"
+  },
+  {
+    "question": "What are the five chunking strategies available?",
+    "answer": "The five chunking strategies are: 1) Fixed-size (token count with overlap, good for contracts), 2) Sentence-aware (groups of sentences, good for articles), 3) Semantic (splits on topic shifts via embedding similarity, good for research papers), 4) Parent-child (primary strategy, nested large/small chunks), 5) Recursive (hierarchical splitting by separators, good for mixed-format docs).",
+    "query_class": "conceptual",
+    "expected_strategy": "dense",
+    "source_document": "chunking_strategies.pdf"
+  },
+  {
+    "question": "How is the query class determined in router v1?",
+    "answer": "Router v1 uses keyword heuristics to classify queries. It checks for sparse signals (code, function, error, version, etc.) and quoted strings to identify keyword queries. Dense signals (explain, why, how, concept, etc.) indicate conceptual queries. If both or neither are present, the query is classified as mixed. Strategy mapping: keyword→sparse, conceptual→dense, mixed→hybrid.",
+    "query_class": "conceptual",
+    "expected_strategy": "dense",
+    "source_document": "router_design.pdf"
+  },
+  {
+    "question": "OpenSearch index name for document chunks",
+    "answer": "Document chunks are indexed in OpenSearch under the 'document_chunks' index, configured with an English language analyzer for BM25 scoring with standard tokenizer, lowercase filter, stop words, and stemming.",
+    "query_class": "keyword",
+    "expected_strategy": "sparse",
+    "source_document": "opensearch_setup.pdf"
+  },
+  {
+    "question": "What RAGAS metrics are computed for each query?",
+    "answer": "Four RAGAS metrics are computed: faithfulness (factual consistency between answer and context), answer_relevancy (how well the answer addresses the question), context_precision (proportion of relevant chunks in retrieved context), and context_recall (proportion of ground truth covered by retrieved context). Context recall requires a ground truth answer.",
+    "query_class": "mixed",
+    "expected_strategy": "hybrid",
+    "source_document": "evaluation_design.pdf"
+  },
+  {
+    "question": "How does the system handle concurrent ingestion requests?",
+    "answer": "Concurrent ingestion requests are handled through document status tracking. Each document is created with 'pending' status, moves to 'processing' during ingestion, and finally 'indexed' on success. The indexer writes to Weaviate and OpenSearch in parallel using asyncio.gather. Redis-backed rate limiting prevents overload at 100 requests per minute.",
+    "query_class": "mixed",
+    "expected_strategy": "hybrid",
+    "source_document": "ingestion_pipeline.pdf"
+  },
+  {
+    "question": "retrieval_top_k default value",
+    "answer": "The default retrieval_top_k is 20 chunks. The query endpoint over-retrieves by 4x (80 chunks) and uses the cross-encoder reranker to narrow down to the final top_k (default 5).",
+    "query_class": "keyword",
+    "expected_strategy": "sparse",
+    "source_document": "pipeline_config.pdf"
+  },
+  {
+    "question": "How does the API handle streaming responses?",
+    "answer": "The API supports streaming responses via the stream_ollama function, which uses httpx's async streaming client to yield text tokens as they arrive from Ollama's streaming API. Each line of the response is parsed as JSON, and the response token is yielded. Streaming ends when the 'done' flag is true in the response chunk.",
+    "query_class": "conceptual",
+    "expected_strategy": "dense",
+    "source_document": "generation_design.pdf"
+  },
+  {
+    "question": "What is the Weaviate authentication configuration?",
+    "answer": "Weaviate is configured with API key authentication. Anonymous access is disabled (AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED=false). The API key is set via WEAVIATE_API_KEY environment variable, with an authorized user 'rag-user'. The default vectorizer module is set to 'none' since embeddings are provided externally by the BGE-M3 service.",
+    "query_class": "mixed",
+    "expected_strategy": "hybrid",
+    "source_document": "weaviate_config.pdf"
+  },
+  {
+    "question": "max_context_tokens setting",
+    "answer": "The max_context_tokens setting defaults to 3000 tokens, limiting the amount of context passed to the LLM for generation. The context compressor ensures the concatenated retrieved chunks fit within this budget.",
+    "query_class": "keyword",
+    "expected_strategy": "sparse",
+    "source_document": "pipeline_config.pdf"
+  },
+  {
+    "question": "Explain the purpose of the RouterWeight database table.",
+    "answer": "The RouterWeight table stores per-strategy, per-query-class performance weights used by the adaptive routing system. It contains: query_class (conceptual/keyword/mixed), strategy (dense/sparse/hybrid), weight (mean faithfulness), alpha and beta (Thompson Sampling parameters for the Beta distribution), and sample_count. These weights are updated nightly by the feedback loop and cached in Redis.",
+    "query_class": "conceptual",
+    "expected_strategy": "dense",
+    "source_document": "router_design.pdf"
+  },
+  {
+    "question": "How are Weaviate and OpenSearch indexed in parallel?",
+    "answer": "The indexer module uses asyncio.gather to write document chunks to both Weaviate (vector store) and OpenSearch (BM25 index) simultaneously. Each store receives the same chunk data but in its native format — Weaviate gets the embedding vector while OpenSearch gets the text content for BM25 tokenization. This parallel approach minimizes ingestion latency.",
+    "query_class": "conceptual",
+    "expected_strategy": "dense",
+    "source_document": "indexer_design.pdf"
+  },
+  {
+    "question": "What is the Redis connection string format?",
+    "answer": "The Redis connection string follows the format redis://:password@host:port. The default is redis://:changeme_redis@redis:6379 (Docker internal network) or redis://:changeme_redis@localhost:6379 (local development). The password is configured via REDIS_PASSWORD environment variable.",
+    "query_class": "keyword",
+    "expected_strategy": "sparse",
+    "source_document": "deployment_guide.pdf"
+  },
+  {
+    "question": "How does the golden dataset evaluation work?",
+    "answer": "The golden dataset evaluation runs 100 curated Q&A pairs through the full RAG pipeline. For each pair, it retrieves chunks, compresses context, generates an answer, and computes RAGAS scores against the ground truth. Results are aggregated into mean/min/max per metric. Threshold assertions ensure faithfulness >= 0.75, answer_relevancy >= 0.80, context_recall >= 0.70, and context_precision >= 0.65.",
+    "query_class": "conceptual",
+    "expected_strategy": "dense",
+    "source_document": "evaluation_design.pdf"
+  },
+  {
+    "question": "How many database tables does the system use?",
+    "answer": "The system uses five PostgreSQL tables: documents (ingested document metadata), query_logs (query execution records), ragas_scores (RAGAS evaluation results linked to query_logs), router_weights (adaptive routing parameters), and api_keys (API key authentication with SHA256 hashes).",
+    "query_class": "mixed",
+    "expected_strategy": "hybrid",
+    "source_document": "database_schema.pdf"
+  },
+  {
+    "question": "CORS configuration for production",
+    "answer": "In production mode (ENVIRONMENT=production), CORS is restricted to specific allowed origins (e.g., https://yourdomain.com). In development mode, all origins are allowed with allow_origins=['*']. Credentials, all methods, and all headers are permitted in both modes.",
+    "query_class": "keyword",
+    "expected_strategy": "sparse",
+    "source_document": "api_config.pdf"
+  },
+  {
+    "question": "Describe the 12-step query pipeline execution flow.",
+    "answer": "The 12-step pipeline: 1) JWT validation via require_auth, 2) OTel trace started, 3) Semantic cache lookup with stampede prevention, 4) Query routing (v1-v4), 5) Retrieval (dense/sparse/hybrid with over-retrieval), 6) Cross-encoder reranking, 7) Context compression, 8) LLM generation with fallback chain, 9) Response construction with source chunks, 10) Async RAGAS evaluation in background, 11) Query logging to Postgres, 12) Return response with trace_id and latency.",
+    "query_class": "conceptual",
+    "expected_strategy": "dense",
+    "source_document": "pipeline_design.pdf"
+  },
+  {
+    "question": "What are the OTel resource attributes configured?",
+    "answer": "Three OpenTelemetry resource attributes are configured: service.name (set to 'adaptive-rag-engine' via OTEL_SERVICE_NAME), service.version ('1.0.0'), and deployment.environment (set from ENVIRONMENT variable). These attributes are attached to all trace spans exported to Jaeger.",
+    "query_class": "keyword",
+    "expected_strategy": "sparse",
+    "source_document": "telemetry_config.pdf"
+  },
+  {
+    "question": "How does the system select chunking strategy based on document type?",
+    "answer": "The select_strategy function maps document types to chunking strategies: PDF and DOCX use parent-child chunking (the primary strategy for structured documents), TXT uses recursive chunking (good for mixed formats), MD and URL use sentence-aware chunking (good for articles and web content). Unknown types default to parent-child.",
+    "query_class": "conceptual",
+    "expected_strategy": "dense",
+    "source_document": "chunking_strategies.pdf"
+  },
+  {
+    "question": "database_url default connection string",
+    "answer": "The default DATABASE_URL is postgresql://rag:changeme_postgres@localhost:5432/ragdb for local development. For Docker deployment, it changes to postgresql://rag:changeme_postgres@postgres:5432/ragdb. The async driver converts this to postgresql+asyncpg:// at runtime.",
+    "query_class": "keyword",
+    "expected_strategy": "sparse",
+    "source_document": "database_config.pdf"
+  },
+  {
+    "question": "What happens when the ML router model is not trained yet?",
+    "answer": "When the ML router (v2) model file (models/router_clf.pkl) does not exist, it gracefully falls back to the v1 rule-based router. Similarly, if the model's prediction confidence is below 0.6, it falls back to v1. Any exception during ML prediction also triggers a v1 fallback, ensuring the system always returns a routing decision.",
+    "query_class": "conceptual",
+    "expected_strategy": "dense",
+    "source_document": "router_design.pdf"
+  },
+  {
+    "question": "How is the embedding dimension determined at startup?",
+    "answer": "The embedding dimension is determined at startup when the SentenceTransformer model is loaded. The model.get_sentence_embedding_dimension() method returns the output vector dimensionality (1024 for BGE-M3). This is logged during startup and returned via the /info endpoint.",
+    "query_class": "mixed",
+    "expected_strategy": "hybrid",
+    "source_document": "embedder_design.pdf"
+  },
+  {
+    "question": "What are the health check endpoints and what do they probe?",
+    "answer": "GET /api/health probes all backing services in parallel using asyncio.gather: PostgreSQL (SELECT 1), Redis (PING), Weaviate (/v1/.well-known/ready), OpenSearch (cluster.health), Ollama (/api/tags), and the embedder service (/health). Each probe reports name, status (ok/error), latency_ms, and error detail. Overall status is 'ok' if all pass, 'degraded' otherwise.",
+    "query_class": "mixed",
+    "expected_strategy": "hybrid",
+    "source_document": "health_design.pdf"
+  },
+  {
+    "question": "What is the tiktoken encoding used for token counting?",
+    "answer": "The system uses the cl100k_base tiktoken encoding for token counting in the chunking module. This encoding is used by models like GPT-4 and provides accurate token counts for chunk size management. If tiktoken is not installed, a fallback estimates tokens by splitting on whitespace.",
+    "query_class": "keyword",
+    "expected_strategy": "sparse",
+    "source_document": "chunking_strategies.pdf"
+  },
+  {
+    "question": "How does document-triggered cache invalidation work?",
+    "answer": "When a document is deleted or re-ingested, the semantic cache's invalidate_by_document method scans all Redis keys matching the semantic_cache:* pattern, checks if the cached response JSON contains the document_id, and deletes matching entries. This ensures stale answers referencing deleted or updated documents are purged from the cache.",
+    "query_class": "conceptual",
+    "expected_strategy": "dense",
+    "source_document": "cache_design.pdf"
+  },
+  {
+    "question": "weaviate-client minimum version requirement",
+    "answer": "The system requires weaviate-client version 3.26.0 or higher, as specified in requirements.txt. This version provides the necessary API for vector search with external embeddings and API key authentication.",
+    "query_class": "keyword",
+    "expected_strategy": "sparse",
+    "source_document": "requirements_docs.pdf"
+  },
+  {
+    "question": "How does the system prompt constrain LLM behavior?",
+    "answer": "The system prompt instructs the LLM to: 1) Answer ONLY from the provided context, 2) Explicitly state when information is insufficient rather than hallucinating, 3) Always cite sources using [Source: filename] notation. This grounding prevents the model from generating unsupported claims and ensures traceability to source documents.",
+    "query_class": "conceptual",
+    "expected_strategy": "dense",
+    "source_document": "generation_design.pdf"
+  },
+  {
+    "question": "What is the overlap parameter in fixed-size chunking?",
+    "answer": "The overlap parameter (default 50 tokens for fixed-size, 32 for parent-child, 16 for child chunks) controls how many tokens from the end of one chunk are repeated at the beginning of the next. This sliding window approach prevents information loss at chunk boundaries and ensures concepts spanning chunk borders are captured in at least one chunk.",
+    "query_class": "mixed",
+    "expected_strategy": "hybrid",
+    "source_document": "chunking_strategies.pdf"
+  },
+  {
+    "question": "How are API keys validated and stored?",
+    "answer": "API keys are stored as SHA256 hashes in the api_keys table with a label and is_active flag. During authentication, the provided key is hashed with SHA256 and compared against stored hashes. This ensures raw API keys are never stored in the database. The API supports both JWT tokens and API keys for authentication.",
+    "query_class": "conceptual",
+    "expected_strategy": "dense",
+    "source_document": "auth_design.pdf"
+  },
+  {
+    "question": "Prometheus scrape interval configuration",
+    "answer": "Prometheus is configured with a global scrape_interval of 15 seconds and evaluation_interval of 15 seconds. It scrapes five targets: rag-api (api:8000), rag-embedder (embedder:8001), rag-reranker (reranker:8002), weaviate (weaviate:2112), and itself (localhost:9090), all on the /metrics path.",
+    "query_class": "keyword",
+    "expected_strategy": "sparse",
+    "source_document": "prometheus_config.pdf"
+  },
+  {
+    "question": "What is the purpose of the rolling faithfulness buffer?",
+    "answer": "The rolling faithfulness buffer maintains the last 100 RAGAS faithfulness scores in memory. After each query evaluation, the new score is appended and the oldest removed if the buffer exceeds 100 entries. The mean of this buffer is exposed as the rag_ragas_faithfulness Prometheus gauge, providing a real-time quality signal without database queries.",
+    "query_class": "conceptual",
+    "expected_strategy": "dense",
+    "source_document": "evaluation_design.pdf"
+  },
+  {
+    "question": "How does the recursive chunking strategy work?",
+    "answer": "Recursive chunking applies a hierarchy of separators (\\n\\n → \\n → '. ' → ' ') to split text. It first tries the coarsest separator (paragraph breaks). If any resulting piece exceeds max_tokens (512), it recursively splits that piece using the next finer separator. This preserves document structure while ensuring no chunk exceeds the token limit.",
+    "query_class": "conceptual",
+    "expected_strategy": "dense",
+    "source_document": "chunking_strategies.pdf"
+  },
+  {
+    "question": "What are the Grafana datasources configured?",
+    "answer": "Two Grafana datasources are provisioned: Prometheus (type: prometheus, URL: http://prometheus:9090, set as default) for metrics visualization, and Jaeger (type: jaeger, URL: http://jaeger:16686) for distributed trace exploration. Both use proxy access mode and are not user-editable.",
+    "query_class": "keyword",
+    "expected_strategy": "sparse",
+    "source_document": "grafana_config.pdf"
+  },
+  {
+    "question": "How does the semantic chunking strategy detect topic shifts?",
+    "answer": "Semantic chunking tokenizes text into sentences, then computes sentence embeddings using the lightweight all-MiniLM-L6-v2 model. It calculates cosine similarity between consecutive sentence embeddings. When similarity drops below a threshold (default 0.85), it marks a split point indicating a topic shift. Sentences between split points are grouped into chunks.",
+    "query_class": "conceptual",
+    "expected_strategy": "dense",
+    "source_document": "chunking_strategies.pdf"
+  },
+  {
+    "question": "What is the minimum chunk content length filter?",
+    "answer": "The chunk_document function filters out chunks with content shorter than 50 characters. This removes empty or tiny chunks that would add noise to the vector store without providing meaningful retrieval value.",
+    "query_class": "keyword",
+    "expected_strategy": "sparse",
+    "source_document": "chunking_strategies.pdf"
+  },
+  {
+    "question": "How does the dev token endpoint work?",
+    "answer": "POST /api/token is a convenience endpoint for development. It accepts username/password credentials, validates against the admin username and the first 8 characters of JWT_SECRET as password. On success, it returns a JWT access_token with a configurable expiration (default 24 hours). In production, this should be replaced with a proper identity provider integration.",
+    "query_class": "mixed",
+    "expected_strategy": "hybrid",
+    "source_document": "auth_design.pdf"
+  },
+  {
+    "question": "OTEL_EXPORTER_OTLP_ENDPOINT default",
+    "answer": "The default OTEL_EXPORTER_OTLP_ENDPOINT is http://localhost:4317 for local development. In Docker deployment, it is set to http://jaeger:4317. The OTLP gRPC exporter runs in insecure mode (no TLS) for internal network communication.",
+    "query_class": "keyword",
+    "expected_strategy": "sparse",
+    "source_document": "telemetry_config.pdf"
+  },
+  {
+    "question": "How does parent expansion work in the reranker?",
+    "answer": "After reranking child chunks, the reranker performs parent expansion: it looks up each child chunk's parent_id and retrieves the full parent chunk content from the vector store. The parent chunk (1024 tokens) provides richer context than the child chunk (256 tokens) alone, improving LLM generation quality while using child chunks for precise retrieval.",
+    "query_class": "conceptual",
+    "expected_strategy": "dense",
+    "source_document": "reranker_design.pdf"
+  },
+  {
+    "question": "What are the Redis persistence settings?",
+    "answer": "Redis is configured with AOF (Append Only File) persistence using appendonly=yes and appendfsync=everysec. This writes every modification to disk at least once per second, providing a good balance between data safety and performance. Data is stored in a Docker volume (redis-data) for persistence across container restarts.",
+    "query_class": "keyword",
+    "expected_strategy": "sparse",
+    "source_document": "redis_config.pdf"
+  },
+  {
+    "question": "How does the async RAGAS evaluation avoid impacting user latency?",
+    "answer": "RAGAS evaluation runs as a FastAPI BackgroundTask, executing after the HTTP response is sent to the user. The evaluate_query function is added to background_tasks, so it runs asynchronously without blocking the response. Results are written to the ragas_scores table and update the Prometheus faithfulness gauge in the background.",
+    "query_class": "conceptual",
+    "expected_strategy": "dense",
+    "source_document": "evaluation_design.pdf"
+  },
+  {
+    "question": "What Docker volumes are used in the production setup?",
+    "answer": "Nine Docker volumes are used: weaviate-data (vector store), opensearch-data (BM25 index), postgres-data (relational database), redis-data (cache and rate limiting), grafana-data (dashboard state), prometheus-data (metrics retention), embedder-cache (HuggingFace model cache), reranker-cache (HuggingFace model cache), and ollama-data (LLM model weights).",
+    "query_class": "keyword",
+    "expected_strategy": "sparse",
+    "source_document": "deployment_guide.pdf"
+  },
+  {
+    "question": "How does the query request model support filtering?",
+    "answer": "The QueryRequest model supports filtering via optional collection (string) and tags (list of strings) fields. These filters are passed to both dense and sparse retrievers. In Weaviate, they translate to property filters on the DocumentChunk class. In OpenSearch, they become additional query terms in the BM25 search.",
+    "query_class": "mixed",
+    "expected_strategy": "hybrid",
+    "source_document": "api_schemas.pdf"
+  },
+  {
+    "question": "What is the pool_size configuration for PostgreSQL?",
+    "answer": "The SQLAlchemy async engine is configured with pool_size=10 and max_overflow=20, allowing up to 30 concurrent database connections. pool_pre_ping=True ensures stale connections are detected and replaced. In development mode, SQL echo is enabled for debugging.",
+    "query_class": "keyword",
+    "expected_strategy": "sparse",
+    "source_document": "database_config.pdf"
+  },
+  {
+    "question": "How does the system handle multilingual documents?",
+    "answer": "The BGE-M3 embedding model supports multilingual text natively, handling over 100 languages. The langdetect library is used to identify document language during parsing. The OpenSearch BM25 index uses the English analyzer by default but can be extended with language-specific analyzers. Chunking strategies work on any language since they operate on token boundaries.",
+    "query_class": "conceptual",
+    "expected_strategy": "dense",
+    "source_document": "multilingual_support.pdf"
+  },
+  {
+    "question": "What is the maximum file size for document upload?",
+    "answer": "The maximum file upload size is 50MB, configured via the MAX_FILE_SIZE_MB environment variable (default 50). This limit is enforced during the ingestion endpoint validation. Larger documents should be split into smaller files before upload.",
+    "query_class": "keyword",
+    "expected_strategy": "sparse",
+    "source_document": "ingestion_config.pdf"
+  },
+  {
+    "question": "How does the FastAPI application handle startup and shutdown?",
+    "answer": "The FastAPI app uses an async context manager lifespan function. On startup, it sets up OpenTelemetry tracing and auto-creates database tables in development mode. It logs the environment, LLM, Weaviate, and OpenSearch configurations. On shutdown, it logs the shutdown event. This pattern replaces the deprecated on_event decorators.",
+    "query_class": "conceptual",
+    "expected_strategy": "dense",
+    "source_document": "api_design.pdf"
+  },
+  {
+    "question": "What are the RAGAS evaluation thresholds for the golden dataset?",
+    "answer": "The golden dataset evaluation enforces four thresholds: faithfulness >= 0.75, answer_relevancy >= 0.80, context_recall >= 0.70, and context_precision >= 0.65. If any metric's mean falls below its threshold when --assert-thresholds is passed, the script exits with code 1 for CI/CD integration.",
+    "query_class": "keyword",
+    "expected_strategy": "sparse",
+    "source_document": "evaluation_config.pdf"
+  },
+  {
+    "question": "How does the LLM router v3 parse structured output?",
+    "answer": "Router v3 sends a carefully crafted prompt to Ollama requesting JSON output with strategy, query_class, and confidence fields. It uses temperature=0 for deterministic output. The response text is parsed with a regex to extract the JSON object, then validated against the Strategy and QueryClass enums. If parsing fails or confidence is low, it falls back to v1.",
+    "query_class": "conceptual",
+    "expected_strategy": "dense",
+    "source_document": "router_design.pdf"
+  },
+  {
+    "question": "What is the Ollama API endpoint format?",
+    "answer": "Ollama exposes a REST API at http://host:11434. The system uses POST /api/generate for text generation (with stream=true/false), GET /api/tags for health checking and listing available models. The generate endpoint accepts model, prompt, options (temperature, num_predict, stop tokens), and stream parameters.",
+    "query_class": "keyword",
+    "expected_strategy": "sparse",
+    "source_document": "ollama_docs.pdf"
+  },
+  {
+    "question": "How does the system ensure data consistency between vector stores?",
+    "answer": "The indexer writes to both Weaviate and OpenSearch in a single asyncio.gather call. If either write fails, the document status is set to 'failed' with the error message. The system does not implement distributed transactions, so in rare failure cases, manual cleanup may be needed. Document deletion removes entries from both stores to maintain consistency.",
+    "query_class": "conceptual",
+    "expected_strategy": "dense",
+    "source_document": "indexer_design.pdf"
+  },
+  {
+    "question": "query latency histogram bucket boundaries",
+    "answer": "The rag_query_latency_seconds histogram uses bucket boundaries of [0.1, 0.2, 0.5, 1.0, 2.0, 5.0, 10.0] seconds. The rag_retrieval_latency_seconds histogram uses [0.05, 0.1, 0.2, 0.5, 1.0, 2.0] seconds. The rag_reranker_latency_seconds uses [0.05, 0.1, 0.2, 0.5, 1.0] seconds.",
+    "query_class": "keyword",
+    "expected_strategy": "sparse",
+    "source_document": "telemetry_config.pdf"
+  },
+  {
+    "question": "What does the /info endpoint return for the embedder service?",
+    "answer": "The embedder's GET /info endpoint returns four fields: model (the embedding model name, e.g., BAAI/bge-m3), version (the model version string), dim (the embedding dimensionality from get_sentence_embedding_dimension()), and max_seq_length (the model's maximum input sequence length). Returns 503 if the model is not loaded.",
+    "query_class": "mixed",
+    "expected_strategy": "hybrid",
+    "source_document": "embedder_api.pdf"
+  },
+  {
+    "question": "How are source citations formatted in generated answers?",
+    "answer": "The system prompt instructs the LLM to cite sources using [Source: filename] notation at the end of answers. The context compression module formats retrieved chunks with source metadata headers, making source information available to the LLM. The API response also includes a sources array with chunk_id, content preview (first 500 chars), document_id, source filename, and relevance score.",
+    "query_class": "conceptual",
+    "expected_strategy": "dense",
+    "source_document": "generation_design.pdf"
+  },
+  {
+    "question": "sentences_per_chunk default in sentence-aware chunking",
+    "answer": "The default sentences_per_chunk parameter is 4 in the sentence-aware chunking strategy. This groups four consecutive sentences into each chunk, using NLTK's sent_tokenize for sentence boundary detection with a regex fallback if NLTK is not available.",
+    "query_class": "keyword",
+    "expected_strategy": "sparse",
+    "source_document": "chunking_config.pdf"
+  },
+  {
+    "question": "How does the pipeline handle empty retrieval results?",
+    "answer": "When retrieval returns zero chunks, the query endpoint raises an HTTP 404 error with the message 'No relevant documents found. Please ingest some documents first.' This occurs after the retrieval step but before reranking, preventing unnecessary downstream processing and giving the user a clear actionable error.",
+    "query_class": "conceptual",
+    "expected_strategy": "dense",
+    "source_document": "pipeline_design.pdf"
+  },
+  {
+    "question": "What is the Weaviate certainty parameter in cache lookup?",
+    "answer": "The semantic cache uses Weaviate's nearVector search with certainty set to the semantic_cache_threshold (default 0.95). Certainty in Weaviate represents cosine similarity normalized to [0,1], where 1.0 is identical. The high 0.95 threshold ensures only near-duplicate queries return cached results.",
+    "query_class": "keyword",
+    "expected_strategy": "sparse",
+    "source_document": "cache_config.pdf"
+  },
+  {
+    "question": "What retry configuration is used for LLM generation?",
+    "answer": "LLM generation uses tenacity retry with stop_after_attempt(3), wait_exponential(multiplier=1, min=1, max=10), and retry on httpx.TimeoutException and httpx.HTTPStatusError. The httpx client timeout is set to 120 seconds for generation requests. After all retries are exhausted, the fallback chain moves to the next level.",
+    "query_class": "mixed",
+    "expected_strategy": "hybrid",
+    "source_document": "generation_config.pdf"
+  },
+  {
+    "question": "How does the OpenSearch BM25 query work?",
+    "answer": "The sparse retriever constructs an OpenSearch multi_match query against the document_chunks index. It searches the content field using BM25 scoring with the English analyzer. Optional filters for collection and tags are added as bool must clauses. Results are limited to top_k and returned as RetrievedChunk objects with BM25 scores.",
+    "query_class": "conceptual",
+    "expected_strategy": "dense",
+    "source_document": "sparse_retrieval.pdf"
+  },
+  {
+    "question": "opensearch-py minimum version",
+    "answer": "The system requires opensearch-py version 2.4.0 or higher, as specified in requirements.txt. The AsyncOpenSearch client is used for non-blocking BM25 queries and health checks.",
+    "query_class": "keyword",
+    "expected_strategy": "sparse",
+    "source_document": "requirements_docs.pdf"
+  },
+  {
+    "question": "How does the system prevent hallucination in LLM responses?",
+    "answer": "Hallucination prevention is multi-layered: 1) System prompt constrains the LLM to answer only from provided context, 2) Context compression removes irrelevant information, 3) Cross-encoder reranking ensures high-relevance chunks, 4) RAGAS faithfulness scoring detects unfaithful responses, 5) Low temperature (0.1) reduces creative deviation, 6) Stop tokens prevent runaway generation.",
+    "query_class": "conceptual",
+    "expected_strategy": "dense",
+    "source_document": "quality_design.pdf"
+  },
+  {
+    "question": "What is the EMBEDDING_MODEL_VERSION used for?",
+    "answer": "The EMBEDDING_MODEL_VERSION (default 'bge-m3-v1') is concatenated with the text content to form the Redis cache key for embeddings. This ensures that when the embedding model is updated, cached embeddings from the old model version are not reused, preventing vector space inconsistencies.",
+    "query_class": "mixed",
+    "expected_strategy": "hybrid",
+    "source_document": "embedder_design.pdf"
+  },
+  {
+    "question": "How is the query trace_id generated and used?",
+    "answer": "The trace_id is generated as a 16-character hex string from a UUID4. It is set as an OTel span attribute on the root rag.query span, stored in the query_logs table, and returned in the QueryResponse. It enables end-to-end request tracing across the pipeline, linking Jaeger traces to database records and API responses.",
+    "query_class": "mixed",
+    "expected_strategy": "hybrid",
+    "source_document": "telemetry_design.pdf"
+  },
+  {
+    "question": "How is the embedding microservice health checked?",
+    "answer": "The embedder's GET /health endpoint returns a JSON object with status ('ok' or 'degraded'), model name, model_loaded boolean, and redis connectivity boolean. The main API's health check probes this endpoint via HTTP GET with a 5-second timeout. The model is considered loaded if _model is not None after the lifespan startup event.",
+    "query_class": "conceptual",
+    "expected_strategy": "dense",
+    "source_document": "embedder_design.pdf"
+  },
+  {
+    "question": "What happens when both dense and sparse signals are detected in a query?",
+    "answer": "When both sparse signals (code, function, error, etc.) and dense signals (explain, why, how, etc.) are detected, the query is classified as 'keyword' because the sparse check takes precedence in the if-elif chain. However, if only dense signals are found, it's 'conceptual', and if neither is found, it's 'mixed'.",
+    "query_class": "conceptual",
+    "expected_strategy": "dense",
+    "source_document": "router_design.pdf"
+  },
+  {
+    "question": "Grafana admin default credentials",
+    "answer": "The default Grafana admin credentials are username 'admin' and password set via the GRAFANA_PASSWORD environment variable (default: changeme_grafana). User sign-up is disabled (GF_USERS_ALLOW_SIGN_UP=false). Grafana is accessible on port 3000.",
+    "query_class": "keyword",
+    "expected_strategy": "sparse",
+    "source_document": "grafana_config.pdf"
+  },
+  {
+    "question": "How does the dense retriever construct its Weaviate query?",
+    "answer": "The dense retriever embeds the query text via the BGE-M3 embedder service, then constructs a Weaviate nearVector query against the DocumentChunk class. It retrieves chunk_id, document_id, content, parent_id, source fields with the specified top_k limit. Optional collection and tag filters are applied as where clauses. Results include distance/certainty for scoring.",
+    "query_class": "conceptual",
+    "expected_strategy": "dense",
+    "source_document": "dense_retrieval.pdf"
+  },
+  {
+    "question": "What is the RRF constant k value?",
+    "answer": "The Reciprocal Rank Fusion constant k is set to 60, which is the standard value used in the original RRF paper. This constant dampens the impact of rank position, making the fusion less sensitive to minor ranking differences between retrievers.",
+    "query_class": "keyword",
+    "expected_strategy": "sparse",
+    "source_document": "fusion_algorithms.pdf"
+  },
+  {
+    "question": "How does the system handle model warm-up on cold starts?",
+    "answer": "On cold start, the embedder and reranker microservices load their SentenceTransformer and CrossEncoder models during the FastAPI lifespan startup event. The model loading is logged with timing information. Health endpoints return 503 (model_loaded=false) until loading completes. Docker healthcheck retries handle the warm-up period before marking the service as ready.",
+    "query_class": "conceptual",
+    "expected_strategy": "dense",
+    "source_document": "deployment_guide.pdf"
+  },
+  {
+    "question": "What is the purpose of the tags field in document ingestion?",
+    "answer": "The tags field is an optional list of strings attached to document chunks during ingestion. Tags enable fine-grained filtering during retrieval — users can restrict searches to chunks with specific tags. Tags are stored as string arrays in Weaviate and as keyword fields in OpenSearch, supporting both dense and sparse filtered retrieval.",
+    "query_class": "mixed",
+    "expected_strategy": "hybrid",
+    "source_document": "ingestion_pipeline.pdf"
+  },
+  {
+    "question": "JAEGER_UI_PORT default configuration",
+    "answer": "The Jaeger UI is accessible on port 16686 by default, mapped via docker-compose. Jaeger also exposes the OTLP gRPC collector on port 4317 for receiving OpenTelemetry traces from the API service.",
+    "query_class": "keyword",
+    "expected_strategy": "sparse",
+    "source_document": "observability_guide.pdf"
+  },
+  {
+    "question": "How does the system balance between exploration and exploitation in routing?",
+    "answer": "Router v4 uses Thompson Sampling, a Bayesian multi-armed bandit approach. Each strategy maintains Beta(alpha, beta) parameters per query class. Alpha increments on success (faithfulness >= 0.8), beta on failure. Random samples from each Beta distribution are compared, naturally transitioning from exploration (uniform sampling with low alpha/beta) to exploitation (concentrated sampling with high alpha) as data accumulates.",
+    "query_class": "mixed",
+    "expected_strategy": "hybrid",
+    "source_document": "router_design.pdf"
+  }
+]

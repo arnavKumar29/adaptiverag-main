@@ -1,0 +1,63 @@
+# Dev overrides — hot reload, relaxed auth, local ports exposed
+# Usage: docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    volumes:
+      - ./api:/app/api           # hot reload
+    command: uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - "8000:8000"
+
+  dashboard:
+    volumes:
+      - ./dashboard:/app         # hot reload
+    ports:
+      - "5000:5000"
+
+  embedder:
+    volumes:
+      - ./embedder:/app
+    ports:
+      - "8001:8001"
+
+  reranker:
+    volumes:
+      - ./reranker:/app
+    ports:
+      - "8002:8002"
+
+  weaviate:
+    environment:
+      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: "true"  # no auth in dev
+    ports:
+      - "8080:8080"
+      - "50051:50051"
+
+  opensearch:
+    ports:
+      - "9200:9200"
+
+  postgres:
+    ports:
+      - "5432:5432"
+
+  redis:
+    ports:
+      - "6379:6379"
+
+  ollama:
+    ports:
+      - "11434:11434"
+
+  prometheus:
+    ports:
+      - "9090:9090"
+
+  jaeger:
+    ports:
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP

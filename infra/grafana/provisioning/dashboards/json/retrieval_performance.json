@@ -1,0 +1,151 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "graphTooltip": 1,
+  "id": null,
+  "panels": [
+    {
+      "id": 1,
+      "title": "Retrieval Latency by Type (p50 / p95)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(rag_retrieval_latency_seconds_bucket[5m])) by (le, retriever))",
+          "legendFormat": "{{retriever}} p50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(rag_retrieval_latency_seconds_bucket[5m])) by (le, retriever))",
+          "legendFormat": "{{retriever}} p95"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10 }
+        }
+      }
+    },
+    {
+      "id": 2,
+      "title": "Reranker Latency (p50 / p95 / p99)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(rag_reranker_latency_seconds_bucket[5m])) by (le))",
+          "legendFormat": "p50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(rag_reranker_latency_seconds_bucket[5m])) by (le))",
+          "legendFormat": "p95"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(rag_reranker_latency_seconds_bucket[5m])) by (le))",
+          "legendFormat": "p99"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10 }
+        }
+      }
+    },
+    {
+      "id": 3,
+      "title": "Retrieval Latency Heatmap — Dense",
+      "type": "heatmap",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "sum(increase(rag_retrieval_latency_seconds_bucket{retriever=\"dense\"}[5m])) by (le)",
+          "format": "heatmap",
+          "legendFormat": "{{le}}"
+        }
+      ],
+      "options": {
+        "calculate": false,
+        "color": { "scheme": "Oranges", "mode": "scheme" },
+        "yAxis": { "unit": "s" }
+      }
+    },
+    {
+      "id": 4,
+      "title": "Retrieval Latency Heatmap — Sparse",
+      "type": "heatmap",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "sum(increase(rag_retrieval_latency_seconds_bucket{retriever=\"sparse\"}[5m])) by (le)",
+          "format": "heatmap",
+          "legendFormat": "{{le}}"
+        }
+      ],
+      "options": {
+        "calculate": false,
+        "color": { "scheme": "Blues", "mode": "scheme" },
+        "yAxis": { "unit": "s" }
+      }
+    },
+    {
+      "id": 5,
+      "title": "Retrieval Latency Heatmap — Hybrid",
+      "type": "heatmap",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "sum(increase(rag_retrieval_latency_seconds_bucket{retriever=\"hybrid\"}[5m])) by (le)",
+          "format": "heatmap",
+          "legendFormat": "{{le}}"
+        }
+      ],
+      "options": {
+        "calculate": false,
+        "color": { "scheme": "Purples", "mode": "scheme" },
+        "yAxis": { "unit": "s" }
+      }
+    },
+    {
+      "id": 6,
+      "title": "Retrieval Throughput (req/s)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "sum by (retriever) (rate(rag_retrieval_latency_seconds_count[5m]))",
+          "legendFormat": "{{retriever}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": { "drawStyle": "line", "fillOpacity": 20, "stacking": { "mode": "normal" } }
+        }
+      }
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["rag", "retrieval"],
+  "templating": {
+    "list": [
+      {
+        "current": { "selected": false, "text": "Prometheus", "value": "Prometheus" },
+        "hide": 0,
+        "name": "DS_PROMETHEUS",
+        "query": "prometheus",
+        "type": "datasource"
+      }
+    ]
+  },
+  "time": { "from": "now-1h", "to": "now" },
+  "title": "RAG Engine — Retrieval Performance",
+  "uid": "rag-retrieval"
+}
